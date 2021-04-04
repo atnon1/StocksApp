@@ -79,12 +79,15 @@ class StocksModel: ObservableObject {
                 print(error.localizedDescription)
             }
         })
-        cancellable1 = api.$companyLogos.sink(receiveValue: { [weak self] logos in self?.companyLogos = logos })
+//        cancellable1 = api.$companyLogos.sink(receiveValue: { [weak self] logos in self?.companyLogos = logos })
         cancellable2 = api.$currentState.sink(receiveValue: { [weak self] currentState in self?.currentState = currentState
         })
         cancellable3 = api.$companyProfiles.sink(receiveValue: { [weak self] profiles in
             for profile in profiles {
                 self?.profilesCache[profile.key] = profile.value
+                if self?.companyLogos[profile.key] == nil {
+                    self?.loadLogo(for: profile.key)
+                }
             }
             do {
                 try self?.profilesCache.saveToDisk(withName: "profiles")
@@ -110,7 +113,15 @@ class StocksModel: ObservableObject {
     func loadStockInfo(for symbol: String) {
         if profilesCache[symbol] == nil {
             api.loadCompanyProfile(of: symbol)
+        } else {
+            if  api.currentState[symbol]  == nil {
+                api.loadInitialState(of: symbol)
+            }
+            if companyLogos[symbol] == nil {
+                loadLogo(for: symbol)
+            }
         }
+        api.loadInitialState(of: symbol)
         api.subscribeToState(of: symbol)
     }
     
@@ -145,6 +156,14 @@ class StocksModel: ObservableObject {
     
     func unsubscribe(from symbol: String) {
         api.unsubscribe(from: symbol)
+    }
+    
+    func loadLogo(for symbol: String) {
+        guard let string = profilesCache[symbol]?.logo, let url = URL(string: string) else { return }
+        _ = ImageLoader.shared.loadImage(from: url).sink {
+            [weak self] image in
+            self?.companyLogos[symbol] = image
+        }
     }
     
 }
