@@ -172,7 +172,7 @@ extension Cache where Key: Codable, Value: Codable {
 }
 
 extension Cache where Key: Codable, Value: Codable {
-    func loadFromDisk(withName name: String, using fileManager: FileManager = .default) throws -> Cache<Key, Value> {
+    func loadFromDisk(named name: String, using fileManager: FileManager = .default) throws -> Cache<Key, Value> {
         let folderURLs = fileManager.urls(
             for: .cachesDirectory,
             in: .userDomainMask

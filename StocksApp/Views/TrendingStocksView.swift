@@ -48,7 +48,7 @@ struct TrendingStocksView: View {
                                     }
                                 }
                                 ForEach(filteredList, id: \.self) { symbol in
-                                    SymbolRow(symbol: symbol)
+                                    SymbolRowView(symbol: symbol)
                                         .environmentObject(viewModel)
                                         .onAppear { viewModel.loadStockInfo(for: symbol) }
                                         .onDisappear { viewModel.symbolDisappears(symbol)
@@ -68,7 +68,7 @@ struct TrendingStocksView: View {
                         } else {
                             List  {
                                 ForEach(Array(viewModel.favorites).sorted(), id: \.self) { symbol in
-                                    SymbolRow(symbol: symbol)
+                                    SymbolRowView(symbol: symbol)
                                         .environmentObject(viewModel)
                                         .onAppear { viewModel.loadStockInfo(for: symbol) }
                                 }

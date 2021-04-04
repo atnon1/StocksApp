@@ -1,5 +1,5 @@
 //
-//  SymbolRow.swift
+//  SymbolRowView.swift
 //  StocksApp
 //
 //  Created by Anton Makeev on 03.04.2021.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SymbolRow: View {
+struct SymbolRowView: View {
     
     @EnvironmentObject var viewModel: TrendingStockViewModel
 

@@ -11,27 +11,13 @@ import Combine
 class StocksModel: ObservableObject {
     
     let api = StocksAPI()
-    var trendingCache = Cache<String, [String]>() {
-        didSet {
-            publish()
-            do {
-            try trendingCache.saveToDisk(withName: "trending")
-            print(trending)
-            } catch {
-                print(error.localizedDescription)
-            }
-        }
-    }
-    var profilesCache = Cache<String, CompanyProfile>() {
-        didSet {
-            try? trendingCache.saveToDisk(withName: "profiles")
-            publish()
-        }
-    }
+    var trendingCache = Cache<String, [String]>()
+    var profilesCache = Cache<String, CompanyProfile>(maximumEntryCount: 500)
+    var namesCache = Cache<String, [String : String]>()
     
     var favoriteStocks = Set<String>() {
         didSet {
-            publishedVersion += 1
+            publish()
             UserDefaults.standard.setValue(Array(favoriteStocks), forKey: "favorite")
         }
     }
@@ -54,16 +40,11 @@ class StocksModel: ObservableObject {
             publish()
         }
     }
-    private(set) var companyProfiles = [String: CompanyProfile]() {
-        didSet {
-            publish()
-        }
+
+    var companyNames: [String: String] {
+        namesCache["names"] ?? [:]
     }
-    private(set) var companyNames = [String: String] () {
-        didSet {
-            publish()
-        }
-    }
+    
     // To get all changes by ViewModel
     @Published var publishedVersion = 0
     
@@ -78,24 +59,49 @@ class StocksModel: ObservableObject {
     }
     
     init() {
-        if let cache = try? trendingCache.loadFromDisk(withName: "trending"), let trending = cache["trending"], !trending.isEmpty {
+        if let cache = try? trendingCache.loadFromDisk(named: "trending"), let trending = cache["trending"], !trending.isEmpty {
             trendingCache = cache
-        } else {
-            api.getTrendingStocks()
         }
-        if let cache = try? profilesCache.loadFromDisk(withName: "profiles") {
+        api.getTrendingStocks()
+        if let cache = try? profilesCache.loadFromDisk(named: "profiles")  {
             profilesCache = cache
         }
+        if let cache = try? namesCache.loadFromDisk(named: "names") {
+            namesCache = cache
+        }
         cancellable = api.$trendingStocks.sink(receiveValue: {
-                                                [weak self] stocks in self?.trendingCache["trending"] = stocks })
+            [weak self] stocks in
+            guard !stocks.isEmpty else { return }
+            self?.trendingCache["trending"] = stocks
+            do {
+                try self?.trendingCache.saveToDisk(withName: "trending")
+            } catch {
+                print(error.localizedDescription)
+            }
+        })
         cancellable1 = api.$companyLogos.sink(receiveValue: { [weak self] logos in self?.companyLogos = logos })
-        cancellable2 = api.$currentState.sink(receiveValue: { [weak self] currentState in self?.currentState = currentState })
+        cancellable2 = api.$currentState.sink(receiveValue: { [weak self] currentState in self?.currentState = currentState
+        })
         cancellable3 = api.$companyProfiles.sink(receiveValue: { [weak self] profiles in
             for profile in profiles {
                 self?.profilesCache[profile.key] = profile.value
             }
+            do {
+                try self?.profilesCache.saveToDisk(withName: "profiles")
+            } catch {
+                print(error.localizedDescription)
+            }
+            self?.publish()
         })
-        cancellable4 = api.$companyNames.sink(receiveValue: { [weak self] names in self?.companyNames = names })
+        cancellable4 = api.$companyNames.sink(receiveValue: { [weak self] names in
+            guard !names.isEmpty else { return }
+            self?.namesCache["names"] = names
+            do {
+                try self?.namesCache.saveToDisk(withName: "names")
+            } catch {
+                print(error.localizedDescription)
+            }
+        })
         if let favorite = UserDefaults.standard.object(forKey: "favorite") as? [String] {
             favoriteStocks = Set(favorite)
         }
@@ -129,6 +135,12 @@ class StocksModel: ObservableObject {
         } else {
             favoriteStocks.insert(symbol)
         }
+    }
+    
+    func getFiltered(by prefix: String) -> [String] {
+        let prefix = prefix.lowercased()
+        let keysAndNames = Array(companyNames.filter { $0.value.lowercased().hasPrefix(prefix) || $0.key.lowercased().hasPrefix(prefix) }.keys)
+        return Array(keysAndNames).sorted()
     }
     
     func unsubscribe(from symbol: String) {

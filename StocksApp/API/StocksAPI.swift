@@ -57,7 +57,7 @@ class StocksAPI: ObservableObject {
         dataTask.resume()
     }
     
-    // Для каждой компании деалется 1 запрос. Здесь самоме главное - ссылка на логотип
+    // Для каждой компании деалется 1 запрос
     func loadCompanyProfile(of symbol: String) {
         if companyProfiles[symbol] != nil { return }
         guard let url = URL(string: "https://finnhub.io/api/v1/stock/profile2?symbol=\(symbol)&token=\(finnHubToken)") else {

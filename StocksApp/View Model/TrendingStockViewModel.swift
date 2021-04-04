@@ -37,13 +37,11 @@ class TrendingStockViewModel: ObservableObject {
     }
     
     func companyProfile(for symbol: String) -> CompanyProfile? {
-        model.companyProfiles[symbol]
+        model.companyProfile(for: symbol)
     }
     
     func getStocksFiltered(by str: String) -> [String] {
-        let str = str.lowercased()
-        let keysAndNames = Array(model.companyNames.filter { $0.value.lowercased().hasPrefix(str) || $0.key.lowercased().hasPrefix(str) }.keys)
-        return Array(keysAndNames)
+        model.getFiltered(by: str)
     }
     
     func companyLogo(for symbol: String) -> UIImage? {
