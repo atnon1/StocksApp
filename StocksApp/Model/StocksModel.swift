@@ -14,6 +14,7 @@ class StocksModel: ObservableObject {
     var trendingCache = Cache<String, [String]>()
     var profilesCache = Cache<String, CompanyProfile>(maximumEntryCount: 500)
     var namesCache = Cache<String, [String : String]>()
+    let imageLoader = ImageLoader(saveWithName: "StocksImages")
     
     var favoriteStocks = Set<String>() {
         didSet {
@@ -160,7 +161,7 @@ class StocksModel: ObservableObject {
     
     func loadLogo(for symbol: String) {
         guard let string = profilesCache[symbol]?.logo, let url = URL(string: string) else { return }
-        _ = ImageLoader.shared.loadImage(from: url).sink {
+        _ = imageLoader.loadImage(from: url).sink {
             [weak self] image in
             self?.companyLogos[symbol] = image
         }
