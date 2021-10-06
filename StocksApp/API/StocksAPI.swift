@@ -18,7 +18,7 @@ class StocksAPI: ObservableObject {
     //var cancellable: AnyCancellable?
     //var trandingCache = NSCache<NSURL:NSString>()
     private var webSocketTask: URLSessionWebSocketTask!
-    private let finnHubToken = "c1gn3gn48v6v8dn0cjbg"
+    private let finnHubToken = "c5esffqad3ib660qocbg"
     private let mboumToken = "demo"
     
     private var fetchTrandingCancellable: AnyCancellable?
@@ -114,9 +114,10 @@ class StocksAPI: ObservableObject {
                     let json = try? JSONSerialization.jsonObject(with: text.data(using: .utf8)!, options: .mutableContainers) as? [String : Any]
                     if let stats = json!["data"] as? [[String : Any]] {
                         let stat = stats[0]
-                        var prevStat = self.currentState[stat["s"] as! String]!
-                        prevStat.currentPrice = stat["p"] as! Double
-                        self.currentState[stat["s"] as! String] = prevStat
+                        if var prevStat = self.currentState[stat["s"] as! String] {
+                            prevStat.currentPrice = stat["p"] as! Double
+                            self.currentState[stat["s"] as! String] = prevStat
+                        }
                     }
                 case .data(let data):
                     print("Received binary message: \(data)")
