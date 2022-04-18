@@ -1,4 +1,4 @@
-# YandexStocksApp
+# StocksApp
 ### Stocks tracking. App for Yandex school test
 
 Project uses Finhub API to get list of S&P500, images and companies' info via request.
